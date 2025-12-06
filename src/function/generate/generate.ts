@@ -1,42 +1,37 @@
 import { characters, name2, this_chid } from '@sillytavern/script';
 import { getContext } from '@sillytavern/scripts/extensions';
 import { prepareOpenAIMessages } from '@sillytavern/scripts/openai';
-
 import { detail } from '@/function/generate/types';
 import { convertFileToBase64 } from '@/function/generate/utils';
-
 const dryRun = false;
-
 /**
- * 使用预设路径处理生成请求
- * @param baseData 基础数据
- * @param processedUserInput 处理后的用户输入
- * @param config 配置参数
- * @returns 生成数据
+ * Handle generation request using preset path
+ * @param baseData Base data
+ * @param processedUserInput Processed user input
+ * @param config Configuration parameters
+ * @returns Generation data
  */
 export async function handlePresetPath(
   baseData: any,
   processedUserInput: string,
   config: Omit<detail.GenerateParams, 'user_input' | 'use_preset'>,
 ) {
-  // prepareOpenAIMessages会从设置里读取场景因此临时覆盖
+  // prepareOpenAIMessages reads scenario from settings, so temporarily override it
   let originalScenario = null;
   const character = characters.at(this_chid as unknown as number);
-
   try {
     const scenarioOverride = config?.overrides?.scenario;
     if (scenarioOverride && character) {
-      // 保存原始场景
+      // Save original scenario
       originalScenario = character.scenario || null;
       character.scenario = scenarioOverride;
     }
-    // 添加user消息(一次性)
+    // Add user message (one-time)
     const userMessageTemp = {
       role: 'user',
       content: processedUserInput,
       image: config.image,
     };
-
     if (config.image) {
       if (Array.isArray(config.image)) {
         delete userMessageTemp.image;
@@ -44,9 +39,7 @@ export async function handlePresetPath(
         userMessageTemp.image = await convertFileToBase64(config.image);
       }
     }
-
     baseData.chatContext.oaiMessages.unshift(userMessageTemp);
-
     const messageData = {
       name2,
       charDescription: baseData.characterInfo.description,
@@ -66,12 +59,10 @@ export async function handlePresetPath(
       messages: baseData.chatContext.oaiMessages,
       messageExamples: baseData.chatContext.oaiMessageExamples,
     };
-
     const [prompt] = await prepareOpenAIMessages(messageData as any, dryRun);
-
     return { prompt };
   } finally {
-    // 恢复原始场景
+    // Restore original scenario
     if (originalScenario !== null && character) {
       character.scenario = originalScenario;
     }
