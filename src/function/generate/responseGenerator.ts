@@ -20,8 +20,8 @@ import { power_user } from '@sillytavern/scripts/power-user';
 import { Stopwatch, uuidv4 } from '@sillytavern/scripts/utils';
 
 /**
- * 流式处理器类
- * 处理流式生成的响应数据
+ * Streaming processor class
+ * Handles streaming generation response data
  */
 class StreamingProcessor {
   public generator: () => AsyncGenerator<{ text: string }, void, void>;
@@ -44,10 +44,10 @@ class StreamingProcessor {
   }
 
   onProgressStreaming(data: { text: string; isFinal: boolean }) {
-    // 计算增量文本
+    // Calculate incremental text
     const newText = data.text.slice(this.messageBuffer.length);
     this.messageBuffer = data.text;
-    // @ts-expect-error 兼容酒馆旧版本
+    // @ts-expect-error Compatible with older SillyTavern versions
     let processedText = cleanUpMessage(newText, false, false, !data.isFinal, this.stoppingStrings);
 
     const charsToBalance = ['*', '"', '```'];
@@ -62,7 +62,7 @@ class StreamingProcessor {
     eventSource.emit('js_stream_token_received_incrementally', processedText, this.generationId);
 
     if (data.isFinal) {
-      // @ts-expect-error 兼容酒馆旧版本
+      // @ts-expect-error Compatible with older SillyTavern versions
       const message = cleanUpMessage(data.text, false, false, false, this.stoppingStrings);
       eventSource.emit('js_generation_before_end', { message }, this.generationId);
       eventSource.emit('js_generation_ended', message, this.generationId);
@@ -118,17 +118,17 @@ class StreamingProcessor {
 }
 
 /**
- * 处理非流式响应
- * @param response API响应对象
- * @returns 提取的消息文本
+ * Handle non-streaming response
+ * @param response API response object
+ * @returns Extracted message text
  */
 async function handleResponse(response: any, generationId: string) {
   if (!response) {
-    throw Error(`未得到响应`);
+    throw Error(`No response received`);
   }
   if (response.error) {
     if (response?.response) {
-      toastr.error(response.response, t`API 错误`, {
+      toastr.error(response.response, t`API Error`, {
         preventDuplicates: true,
       });
     }
@@ -141,14 +141,14 @@ async function handleResponse(response: any, generationId: string) {
 }
 
 /**
- * 生成响应
- * @param generate_data 生成数据
- * @param useStream 是否使用流式传输
- * @param generationId 生成ID
- * @param imageProcessingSetup 图片数组处理设置，包含Promise和解析器
- * @param abortController 中止控制器
- * @param customApi 自定义API配置
- * @returns 生成的响应文本
+ * Generate response
+ * @param generate_data Generation data
+ * @param useStream Whether to use streaming
+ * @param generationId Generation ID
+ * @param imageProcessingSetup Image array processing setup, containing Promise and resolver
+ * @param abortController Abort controller
+ * @param customApi Custom API configuration
+ * @returns Generated response text
  */
 export async function generateResponse(
   generate_data: any,
@@ -164,7 +164,7 @@ export async function generateResponse(
   try {
     deactivateSendButtons();
 
-    // 如果有自定义API配置，设置单次事件拦截
+    // If there's custom API configuration, set up one-time event interception
     if (customApi?.apiurl) {
       customApiEventHandler = (data: any) => {
         data.reverse_proxy = customApi.apiurl;
@@ -194,13 +194,13 @@ export async function generateResponse(
       eventSource.once(event_types.CHAT_COMPLETION_SETTINGS_READY, customApiEventHandler);
     }
 
-    // 如果有图片处理，等待图片处理完成
+    // If there's image processing, wait for image processing to complete
     if (imageProcessingSetup) {
       try {
         await imageProcessingSetup.imageProcessingPromise;
       } catch (imageError: any) {
-        // 图片处理失败不应该阻止整个生成流程，但需要记录错误
-        throw new Error(`图片处理失败: ${imageError?.message || '未知错误'}`);
+        // Image processing failure should not block the entire generation flow, but needs to log the error
+        throw new Error(`Image processing failed: ${imageError?.message || 'Unknown error'}`);
       }
     }
     if (generationId === undefined || generationId === '') {
@@ -214,7 +214,7 @@ export async function generateResponse(
         saveSettingsDebounced();
       }
       const streamingProcessor = new StreamingProcessor(generationId, abortController);
-      // @ts-expect-error 类型正确
+      // @ts-expect-error Type is correct
       streamingProcessor.generator = await sendOpenAIRequest('normal', generate_data.prompt, abortController.signal);
       result = (await streamingProcessor.generate()) as string;
       if (originalStreamSetting !== oai_settings.stream_openai) {
@@ -229,13 +229,13 @@ export async function generateResponse(
       result = await handleResponse(response, generationId);
     }
   } catch (error) {
-    // 如果有图片处理设置但生成失败，确保拒绝Promise
+    // If there's image processing setup but generation failed, ensure Promise is rejected
     if (imageProcessingSetup) {
       imageProcessingSetup.rejectImageProcessing(error);
     }
     throw error;
   } finally {
-    // 清理自定义API事件监听器
+    // Clean up custom API event listener
     if (customApiEventHandler) {
       eventSource.removeListener(event_types.CHAT_COMPLETION_SETTINGS_READY, customApiEventHandler);
     }
