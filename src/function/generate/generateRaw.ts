@@ -30,16 +30,16 @@ import { Prompt, PromptCollection } from '@sillytavern/scripts/PromptManager';
 import { uuidv4 } from '@sillytavern/scripts/utils';
 
 /**
- * @fileoverview 原始生成路径处理模块 - 不使用预设的生成逻辑
- * 包含所有不使用预设(use_preset=false)时的提示词处理和聊天完成逻辑
+ * @fileoverview Raw generation path processing module - generation logic without using presets
+ * Contains all prompt processing and chat completion logic when not using presets (use_preset=false)
  */
 
 /**
- * 将系统提示词转换为集合格式
- * 处理内置提示词、自定义注入和对话示例，转换为PromptCollection和MessageCollection格式
- * @param baseData 包含角色信息和世界书信息的基础数据
- * @param promptConfig 提示词配置参数，包含order等设置
- * @returns Promise<{systemPrompts: PromptCollection, dialogue_examples: MessageCollection}> 返回系统提示词和对话示例的集合
+ * Convert system prompts to collection format
+ * Processes built-in prompts, custom injections, and dialogue examples, converting them to PromptCollection and MessageCollection format
+ * @param baseData Base data containing character info and world info
+ * @param promptConfig Prompt configuration parameters, including order settings
+ * @returns Promise<{systemPrompts: PromptCollection, dialogue_examples: MessageCollection}> Returns collections of system prompts and dialogue examples
  */
 async function convertSystemPromptsToCollection(
   baseData: any,
@@ -65,7 +65,7 @@ async function convertSystemPromptsToCollection(
 
   for (const [index, item] of orderArray.entries()) {
     if (typeof item === 'string') {
-      // 处理内置提示词
+      // Process built-in prompts
       const content = builtinPromptContents[item as keyof typeof builtinPromptContents];
       if (content) {
         promptCollection.add(
@@ -78,7 +78,7 @@ async function convertSystemPromptsToCollection(
         );
       }
     } else if (typeof item === 'object' && item.role && item.content) {
-      // 处理自定义注入
+      // Process custom injections
       const identifier = `custom_prompt_${index}`;
       promptCollection.add(
         new Prompt({
@@ -92,7 +92,7 @@ async function convertSystemPromptsToCollection(
   }
 
   if (baseData.chatContext.oaiMessageExamples.length > 0) {
-    // 遍历所有对话示例
+    // Iterate through all dialogue examples
     for (const dialogue of [...baseData.chatContext.oaiMessageExamples]) {
       const dialogueIndex = baseData.chatContext.oaiMessageExamples.indexOf(dialogue);
       const chatMessages = [];
@@ -119,14 +119,14 @@ async function convertSystemPromptsToCollection(
 }
 
 /**
- * 处理聊天记录并注入提示词
- * 根据order配置处理聊天历史和用户输入，并注入各种深度提示词
- * @param baseData 包含聊天上下文的基础数据
- * @param promptConfig 提示词配置参数
- * @param chatCompletion ChatCompletion对象，用于管理token预算和消息集合
- * @param processedUserInput 经过处理的用户输入文本
- * @param processedImageArray 可选的处理后图片数组，用于多图片支持
- * @returns Promise<void> 无返回值，直接修改chatCompletion对象
+ * Process chat history and inject prompts
+ * Processes chat history and user input based on order configuration, and injects various depth prompts
+ * @param baseData Base data containing chat context
+ * @param promptConfig Prompt configuration parameters
+ * @param chatCompletion ChatCompletion object for managing token budget and message collections
+ * @param processedUserInput Processed user input text
+ * @param processedImageArray Optional processed image array for multi-image support
+ * @returns Promise<void> No return value, directly modifies the chatCompletion object
  */
 async function processChatHistoryAndInject(
   baseData: any,
@@ -145,14 +145,14 @@ async function processChatHistoryAndInject(
   const hasChatHistory = chatHistoryIndex !== -1;
   const isChatHistoryFiltered = isPromptFiltered('chat_history', promptConfig);
 
-  // 创建用户输入消息
+  // Create user input message
   let userMessage: Message;
 
   if (processedImageArray && hasUserInput) {
-    // 如果有处理后的图片数组，直接使用数组格式创建消息
+    // If there's a processed image array, directly use array format to create message
     userMessage = await Message.createAsync('user', processedImageArray as any, 'user_input');
   } else {
-    // 否则使用原有逻辑
+    // Otherwise use original logic
     userMessage = await Message.createAsync('user', processedUserInput, 'user_input');
 
     if (promptConfig.image && hasUserInput) {
@@ -165,25 +165,25 @@ async function processChatHistoryAndInject(
     }
   }
 
-  // 如果聊天记录被过滤或不在order中，只处理用户输入
+  // If chat history is filtered or not in order, only process user input
   if (isChatHistoryFiltered || !hasChatHistory) {
     const insertIndex = hasUserInput ? userInputIndex : orderArray.length;
     chatCompletion.add(new MessageCollection('user_input', userMessage), insertIndex);
     return;
   }
 
-  // 处理聊天记录
+  // Process chat history
   const chatCollection = new MessageCollection('chat_history');
 
-  // 为新聊天指示预留token
+  // Reserve tokens for new chat indicator
   const newChat = oai_settings.new_chat_prompt;
   const newChatMessage = await Message.createAsync('system', substituteParams(newChat), 'newMainChat');
   chatCompletion.reserveBudget(newChatMessage);
 
-  // 添加新聊天提示词到集合的最前面
+  // Add new chat prompt to the beginning of the collection
   chatCollection.add(newChatMessage);
 
-  // 处理空消息替换
+  // Handle empty message replacement
   const lastChatPrompt = baseData.chatContext.oaiMessages[baseData.chatContext.oaiMessages.length - 1];
   const emptyMessage = await Message.createAsync('user', oai_settings.send_if_empty, 'emptyUserMessageReplacement');
 
@@ -196,19 +196,19 @@ async function processChatHistoryAndInject(
     chatCollection.add(emptyMessage);
   }
 
-  // 将用户消息添加到消息数组中准备处理注入
+  // Add user message to message array for injection processing
   if (!hasUserInput) {
     let userPrompt: any;
 
     if (processedImageArray) {
-      // 如果有处理后的图片数组，使用数组格式
+      // If there's a processed image array, use array format
       userPrompt = {
         role: 'user',
         content: processedImageArray,
         identifier: 'user_input',
       };
     } else {
-      // 否则使用原有逻辑
+      // Otherwise use original logic
       userPrompt = {
         role: 'user',
         content: processedUserInput,
@@ -223,12 +223,12 @@ async function processChatHistoryAndInject(
     baseData.chatContext.oaiMessages.unshift(userPrompt);
   }
 
-  // 处理注入和添加消息
+  // Process injections and add messages
   const messages = (
     await populationInjectionPrompts(baseData, baseData.chatContext.oaiMessages, promptConfig.inject, promptConfig)
   ).reverse();
   const imageInlining = isImageInliningSupported();
-  // 添加聊天记录
+  // Add chat history
   const chatPool = [...messages];
   for (const chatPrompt of chatPool) {
     const prompt = new Prompt(chatPrompt as any);
@@ -239,7 +239,7 @@ async function processChatHistoryAndInject(
     const promptManager = setupChatCompletionPromptManager(oai_settings);
 
     if (promptManager) {
-      // @ts-expect-error 类型正确
+      // @ts-expect-error Type is correct
       if (promptManager.serviceSettings.names_behavior === character_names_behavior.COMPLETION && prompt.name) {
         const messageName = promptManager.isValidName(prompt.name)
           ? prompt.name
@@ -257,27 +257,27 @@ async function processChatHistoryAndInject(
     }
   }
 
-  // 释放新聊天提示词的预留token
+  // Release reserved tokens for new chat prompt
   chatCompletion.freeBudget(newChatMessage);
 
   if (hasUserInput) {
-    // 按各自在order中的位置添加聊天记录和用户输入
+    // Add chat history and user input according to their positions in order
     chatCompletion.add(chatCollection, chatHistoryIndex);
     chatCompletion.add(new MessageCollection('user_input', userMessage), userInputIndex);
   } else {
-    // 聊天记录中已包含用户输入，直接添加到chat_history位置
+    // Chat history already contains user input, add directly to chat_history position
     chatCompletion.add(chatCollection, chatHistoryIndex);
   }
 }
 
 /**
- * 处理注入提示词
- * 按深度注入各种提示词，包括作者注释、用户描述、世界书深度条目和自定义注入
- * @param baseData 包含世界书信息的基础数据
- * @param messages 原始消息数组
- * @param customInjects 自定义注入提示词数组
- * @param config 配置参数，用于过滤检查
- * @returns Promise<RolePrompt[]> 处理后的消息数组，包含所有注入的提示词
+ * Process injection prompts
+ * Injects various prompts by depth, including author's note, user description, world book depth entries, and custom injections
+ * @param baseData Base data containing world info
+ * @param messages Original message array
+ * @param customInjects Array of custom injection prompts
+ * @param config Configuration parameters for filter checking
+ * @returns Promise<RolePrompt[]> Processed message array containing all injected prompts
  */
 async function populationInjectionPrompts(
   baseData: BaseData,
@@ -328,7 +328,7 @@ async function populationInjectionPrompts(
     }
   }
 
-  // 处理自定义注入
+  // Process custom injections
   if (Array.isArray(customInjects)) {
     injectPrompts(
       customInjects.map(inject => ({ id: uuidv4(), ...inject })),
@@ -344,7 +344,7 @@ async function populationInjectionPrompts(
     const separator = '\n';
 
     for (const role of roles) {
-      // 直接处理当前深度和角色的所有提示词
+      // Directly process all prompts for current depth and role
       const rolePrompts = depthPrompts
         .filter(prompt => prompt.role === role)
         .map(x => x.content.trim())
@@ -370,12 +370,12 @@ async function populationInjectionPrompts(
 }
 
 /**
- * 处理原始生成路径（不使用预设）
- * 构建ChatCompletion对象，按照指定order处理各种提示词，管理token预算
- * @param baseData 包含角色信息、聊天上下文和世界书信息的基础数据
- * @param config 配置参数，包含图片、覆盖设置、注入等选项
- * @param processedUserInput 经过处理的用户输入文本
- * @returns Promise<{prompt: any}> 包含最终prompt的生成数据对象
+ * Handle raw generation path (without using presets)
+ * Builds ChatCompletion object, processes various prompts according to specified order, manages token budget
+ * @param baseData Base data containing character info, chat context, and world info
+ * @param config Configuration parameters including image, override settings, injections, etc.
+ * @param processedUserInput Processed user input text
+ * @returns Promise<{prompt: any}> Generation data object containing the final prompt
  */
 export async function handleCustomPath(
   baseData: any,
@@ -397,17 +397,17 @@ export async function handleCustomPath(
     return acc;
   }, {});
 
-  //转换为集合
+  // Convert to collections
   const { systemPrompts, dialogue_examples } = await convertSystemPromptsToCollection(baseData, config);
   const addToChatCompletionInOrder = async (source: any, index: number) => {
     if (typeof source === 'object') {
-      // 处理自定义注入
+      // Process custom injections
       const collection = new MessageCollection(`custom_prompt_${index}`);
       const message = await Message.createAsync(source.role, source.content, `custom_prompt_${index}`);
       collection.add(message);
       chatCompletion.add(collection, index);
     } else if (systemPrompts.has(source)) {
-      // 处理普通提示词
+      // Process regular prompts
       const prompt = systemPrompts.get(source);
       const collection = new MessageCollection(source);
       const message = await Message.fromPromptAsync(prompt);
@@ -416,7 +416,7 @@ export async function handleCustomPath(
     }
   };
 
-  // 处理所有类型的提示词
+  // Process all types of prompts
   for (const [index, item] of orderArray.entries()) {
     if (typeof item === 'string') {
       if (!isPromptFiltered(item, config)) {
@@ -434,14 +434,14 @@ export async function handleCustomPath(
   if (dialogue_examplesIndex !== -1 && !isPromptFiltered('dialogue_examples', config)) {
     chatCompletion.add(dialogue_examples, dialogue_examplesIndex);
   }
-  //给user输入预留token
+  // Reserve tokens for user input
   const userInputMessage = await Message.createAsync('user', processedUserInput, 'user_input');
   chatCompletion.reserveBudget(userInputMessage);
 
   await processChatHistoryAndInject(baseData, config, chatCompletion, processedUserInput, config.processedImageArray);
   chatCompletion.freeBudget(userInputMessage);
 
-  //根据当前预设决定是否合并连续系统role消息
+  // Decide whether to merge consecutive system role messages based on current preset
   if (oai_settings.squash_system_messages) {
     await chatCompletion.squashSystemMessages();
   }
