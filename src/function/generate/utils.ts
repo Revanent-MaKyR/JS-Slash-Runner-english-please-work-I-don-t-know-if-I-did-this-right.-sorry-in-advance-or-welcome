@@ -15,9 +15,9 @@ import { flushEphemeralStoppingStrings } from '@sillytavern/scripts/power-user';
 import { getBase64Async, isDataURL } from '@sillytavern/scripts/utils';
 
 /**
- * 将文件转换为base64
- * @param img 文件或图片url
- * @returns base64字符串
+ * Convert file to base64
+ * @param img File or image URL
+ * @returns Base64 string
  */
 export async function convertFileToBase64(img: File | string): Promise<string | undefined> {
   const isDataUrl = typeof img === 'string' && isDataURL(img);
@@ -43,9 +43,9 @@ export async function convertFileToBase64(img: File | string): Promise<string | 
 }
 
 /**
- * 从响应数据中提取消息内容
- * @param data 响应数据
- * @returns 提取的消息字符串
+ * Extract message content from response data
+ * @param data Response data
+ * @returns Extracted message string
  */
 export function extractMessageFromData(data: any): string {
   if (typeof data === 'string') {
@@ -63,9 +63,9 @@ export function extractMessageFromData(data: any): string {
 }
 
 /**
- * 处理对话示例格式
- * @param examplesStr 对话示例字符串
- * @returns 处理后的对话示例数组
+ * Parse dialogue examples format
+ * @param examplesStr Dialogue examples string
+ * @returns Processed dialogue examples array
  */
 export function parseMesExamples(examplesStr: string): string[] {
   if (examplesStr.length === 0 || examplesStr === '<START>') {
@@ -85,9 +85,9 @@ export function parseMesExamples(examplesStr: string): string[] {
 }
 
 /**
- * 用户输入先正则处理
- * @param user_input 用户输入
- * @returns 处理后的用户输入
+ * Process user input with regex first
+ * @param user_input User input
+ * @returns Processed user input
  */
 export function processUserInput(user_input: string): string {
   if (user_input === '') {
@@ -100,9 +100,9 @@ export function processUserInput(user_input: string): string {
 }
 
 /**
- * 获取提示词角色类型
- * @param role 角色数字
- * @returns 角色字符串
+ * Get prompt role type
+ * @param role Role number
+ * @returns Role string
  */
 export function getPromptRole(role: number): 'system' | 'user' | 'assistant' {
   switch (role) {
@@ -118,10 +118,10 @@ export function getPromptRole(role: number): 'system' | 'user' | 'assistant' {
 }
 
 /**
- * 检查提示词是否被过滤
- * @param promptId 提示词ID
- * @param config 配置对象
- * @returns 是否被过滤
+ * Check if prompt is filtered
+ * @param promptId Prompt ID
+ * @param config Configuration object
+ * @returns Whether it is filtered
  */
 export function isPromptFiltered(promptId: string, config: { overrides?: any }): boolean {
   if (!config.overrides) {
@@ -132,34 +132,34 @@ export function isPromptFiltered(promptId: string, config: { overrides?: any }):
     return config.overrides.with_depth_entries === false;
   }
 
-  // 特殊处理 chat_history
+  // Special handling for chat_history
   if (promptId === 'chat_history') {
     const prompts = config.overrides.chat_history;
     return prompts !== undefined && prompts.length === 0;
   }
 
-  // 对于普通提示词，只有当它在 overrides 中存在且为空字符串时才被过滤
+  // For regular prompts, only filtered when it exists in overrides and is an empty string
   const override = config.overrides[promptId as keyof any];
   return override !== undefined && override === '';
 }
 
 /**
- * 添加临时用户消息
- * @param userContent 用户内容
+ * Add temporary user message
+ * @param userContent User content
  */
 export function addTemporaryUserMessage(userContent: string): void {
   setExtensionPrompt('TEMP_USER_MESSAGE', userContent, extension_prompt_types.IN_PROMPT, 0, true, 1);
 }
 
 /**
- * 移除临时用户消息
+ * Remove temporary user message
  */
 export function removeTemporaryUserMessage(): void {
   setExtensionPrompt('TEMP_USER_MESSAGE', '', extension_prompt_types.IN_PROMPT, 0, true, 1);
 }
 
 /**
- * 解除生成阻塞状态
+ * Unblock generation state
  */
 export function unblockGeneration(): void {
   activateSendButtons();
@@ -169,8 +169,8 @@ export function unblockGeneration(): void {
 }
 
 /**
- * 清理注入提示词
- * @param prefixes 前缀数组
+ * Clear injection prompts
+ * @param prefixes Array of prefixes
  */
 export async function clearInjectionPrompts(prefixes: string[]): Promise<void> {
   const prompts: Record<string, any> = getContext().extensionPrompts;
@@ -181,10 +181,10 @@ export async function clearInjectionPrompts(prefixes: string[]): Promise<void> {
 }
 
 /**
- * 直接处理图片数组，转换为prompt格式
- * @param processedUserInput 处理后的用户输入
- * @param image 图片数组参数
- * @returns 包含文本和图片内容的数组格式
+ * Directly process image array, convert to prompt format
+ * @param processedUserInput Processed user input
+ * @param image Image array parameter
+ * @returns Array format containing text and image content
  */
 export async function processImageArrayDirectly(
   processedUserInput: string,
@@ -197,7 +197,7 @@ export async function processImageArrayDirectly(
       try {
         const processedImg = await convertFileToBase64(img);
         if (!processedImg) {
-          console.warn('[TavernHelper][Generate:图片数组处理] 图片处理失败，跳过该图片');
+          console.warn('[TavernHelper][Generate:ImageArrayProcessing] Image processing failed, skipping this image');
           return null;
         }
         return {
@@ -205,7 +205,7 @@ export async function processImageArrayDirectly(
           image_url: { url: processedImg, detail: quality },
         };
       } catch (imgError) {
-        console.warn('[TavernHelper][Generate:图片数组处理] 图片处理失败，跳过该图片');
+        console.warn('[TavernHelper][Generate:ImageArrayProcessing] Image processing failed, skipping this image');
         return null;
       }
     }),
@@ -221,10 +221,10 @@ export async function processImageArrayDirectly(
 }
 
 /**
- * 设置图片数组处理逻辑（用于事件监听方式）
- * @param processedUserInput 处理后的用户输入
- * @param image 图片数组参数
- * @returns 包含带标识符的用户输入和Promise解析器的对象
+ * Set up image array processing logic (for event listener method)
+ * @param processedUserInput Processed user input
+ * @param image Image array parameter
+ * @returns Object containing user input with marker and Promise resolver
  */
 export function setupImageArrayProcessing(
   processedUserInput: string,
@@ -252,10 +252,10 @@ export function setupImageArrayProcessing(
 
   const imageArrayHandler = async (eventData: { chat: { role: string; content: string | any[] }[] }) => {
     try {
-      // 添加超时保护
+      // Add timeout protection
       timeoutId = setTimeout(() => {
-        console.warn('[TavernHelper][Generate:图片数组处理] 图片处理超时');
-        rejectImageProcessing(new Error('图片处理超时'));
+        console.warn('[TavernHelper][Generate:ImageArrayProcessing] Image processing timeout');
+        rejectImageProcessing(new Error('Image processing timeout'));
       }, 30000);
 
       for (let i = eventData.chat.length - 1; i >= 0; i--) {
@@ -271,7 +271,7 @@ export function setupImageArrayProcessing(
                 try {
                   const processedImg = await convertFileToBase64(img);
                   if (!processedImg) {
-                    console.warn('[TavernHelper][Generate:图片数组处理] 图片处理失败，跳过该图片');
+                    console.warn('[TavernHelper][Generate:ImageArrayProcessing] Image processing failed, skipping this image');
                     return null;
                   }
                   return {
@@ -279,7 +279,7 @@ export function setupImageArrayProcessing(
                     image_url: { url: processedImg, detail: quality },
                   };
                 } catch (imgError) {
-                  console.warn('[TavernHelper][Generate:图片数组处理] 单个图片处理失败:', imgError);
+                  console.warn('[TavernHelper][Generate:ImageArrayProcessing] Single image processing failed:', imgError);
                   return null;
                 }
               }),
@@ -305,17 +305,17 @@ export function setupImageArrayProcessing(
               clearTimeout(timeoutId);
               timeoutId = null;
             }
-            console.error('[TavernHelper][Generate:图片数组处理] 处理图片时出错:', error);
+            console.error('[TavernHelper][Generate:ImageArrayProcessing] Error processing images:', error);
             rejectImageProcessing(error);
             return;
           }
         }
       }
 
-      console.warn('[TavernHelper][Generate:图片数组处理] 未找到包含图片标记的用户消息');
+      console.warn('[TavernHelper][Generate:ImageArrayProcessing] User message containing image marker not found');
       resolveImageProcessing();
     } catch (error) {
-      console.error('[TavernHelper][Generate:图片数组处理] imageArrayHandler 异常:', error);
+      console.error('[TavernHelper][Generate:ImageArrayProcessing] imageArrayHandler exception:', error);
       rejectImageProcessing(error);
     }
   };
@@ -332,7 +332,7 @@ export function setupImageArrayProcessing(
         eventSource.removeListener('chat_completion_prompt_ready', imageArrayHandler);
         isHandlerRegistered = false;
       } catch (error) {
-        console.warn('[TavernHelper][Generate:图片数组处理] 清理事件监听器时出错:', error);
+        console.warn('[TavernHelper][Generate:ImageArrayProcessing] Error cleaning up event listener:', error);
       }
     }
   };
