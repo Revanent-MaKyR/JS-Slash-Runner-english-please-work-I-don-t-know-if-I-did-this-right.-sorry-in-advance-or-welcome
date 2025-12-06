@@ -63,7 +63,7 @@ export function _eventMakeFirst<T extends EventType>(
 }
 
 export function _eventOnce<T extends EventType>(this: Window, event_type: T, listener: ListenerType[T]): EventOnReturn {
-  // 酒馆自己也支持重复 once, 因此此处不考虑重复的情况
+  // SillyTavern itself also supports duplicate once, so we don't consider duplicate cases here
   const once = (...args: any[]) => {
     get_map.call(this).get(event_type)?.delete(once);
     return listener(...args);
@@ -217,7 +217,7 @@ export type SendingMessage = {
   role: 'user' | 'assistant' | 'system';
   content:
     | string
-    | Array<
+    | Array
         | { type: 'text'; text: string }
         | { type: 'image_url'; image_url: { url: string; detail: 'auto' | 'low' | 'high' } }
         | { type: 'video_url'; video_url: { url: string } }
@@ -312,7 +312,7 @@ export type ListenerType = {
   [tavern_events.GROUP_CHAT_CREATED]: () => void;
   [tavern_events.GENERATE_BEFORE_COMBINE_PROMPTS]: () => void;
   [tavern_events.GENERATE_AFTER_COMBINE_PROMPTS]: (result: { prompt: string; dryRun: boolean }) => void;
-  /** dry_run 只在 SillyTavern 1.13.15 及以后有 */
+  /** dry_run is only available in SillyTavern 1.13.15 and later */
   [tavern_events.GENERATE_AFTER_DATA]: (
     generate_data: {
       prompt: SendingMessage[];
