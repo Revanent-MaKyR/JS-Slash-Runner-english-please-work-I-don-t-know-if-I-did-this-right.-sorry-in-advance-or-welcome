@@ -42,7 +42,7 @@ type GetChatMessagesOption = {
   include_swipes?: boolean;
 };
 
-// TODO: 移入 @/util/message.ts
+// TODO: Move to @/util/message.ts
 function string_to_range(input: string, min: number, max: number) {
   let start, end;
 
@@ -81,13 +81,13 @@ export function getChatMessages(
   const range_demacroed = substituteParamsExtended(range.toString());
   const range_number = string_to_range(range_demacroed, 0, chat.length - 1);
   if (!range_number) {
-    throw Error(`提供的消息范围 range 无效: ${range}`);
+    throw Error(`Invalid message range provided: ${range}`);
   }
   if (!['all', 'system', 'assistant', 'user'].includes(role)) {
-    throw Error(`提供的 role 无效, 请提供 'all', 'system', 'assistant' 或 'user', 你提供的是: ${role}`);
+    throw Error(`Invalid role provided, please provide 'all', 'system', 'assistant' or 'user', you provided: ${role}`);
   }
   if (!['all', 'hidden', 'unhidden'].includes(hide_state)) {
-    throw Error(`提供的 hide_state 无效, 请提供 'all', 'hidden' 或 'unhidden', 你提供的是: ${hide_state}`);
+    throw Error(`Invalid hide_state provided, please provide 'all', 'hidden' or 'unhidden', you provided: ${hide_state}`);
   }
 
   const { start, end } = range_number;
@@ -205,7 +205,7 @@ export async function setChatMessages(
       return;
     }
 
-    // 与提示词模板的兼容性
+    // Compatibility with prompt templates
     if (_.isPlainObject(data?.variables)) {
       _.set(
         data,
@@ -440,7 +440,7 @@ export async function rotateChatMessages(
 }
 
 //----------------------------------------------------------------------------------------------------------------------
-/** @deprecated 请使用 `setChatMessages` 代替 */
+/** @deprecated Please use `setChatMessages` instead */
 export async function setChatMessage(
   field_values: { message?: string; data?: Record<string, any> },
   message_id: number,
@@ -454,11 +454,11 @@ export async function setChatMessage(
 ): Promise<void> {
   field_values = typeof field_values === 'string' ? { message: field_values } : field_values;
   if (typeof swipe_id !== 'number' && swipe_id !== 'current') {
-    throw Error(`提供的 swipe_id 无效, 请提供 'current' 或序号, 你提供的是: ${swipe_id} `);
+    throw Error(`Invalid swipe_id provided, please provide 'current' or a number, you provided: ${swipe_id}`);
   }
   if (!['none', 'display_current', 'display_and_render_current', 'all'].includes(refresh)) {
     throw Error(
-      `提供的 refresh 无效, 请提供 'none', 'display_current', 'display_and_render_current' 或 'all', 你提供的是: ${refresh} `,
+      `Invalid refresh provided, please provide 'none', 'display_current', 'display_and_render_current' or 'all', you provided: ${refresh}`,
     );
   }
 
@@ -472,7 +472,7 @@ export async function setChatMessage(
       return false;
     }
 
-    // swipe_id 对应的消息页存在
+    // The message page corresponding to swipe_id exists
     if (swipe_id == 0 || (chat_message.swipes && swipe_id < chat_message.swipes.length)) {
       return true;
     }
