@@ -13,13 +13,13 @@ declare const $: any;
 const generationControllers = new Map<string, AbortController>();
 
 /**
- * 中断指定的生成请求
- * @param id 生成ID
+ * Abort a specific generation request
+ * @param id Generation ID
  */
 export function stopGenerationById(id: string) {
   if (generationControllers.has(id)) {
     const controller = generationControllers.get(id);
-    controller?.abort(`生成 ID '${id}' 已停止`);
+    controller?.abort(`Generation ID '${id}' has been stopped`);
     generationControllers.delete(id);
     eventSource.emit(event_types.GENERATION_STOPPED, id);
     return true;
@@ -28,24 +28,24 @@ export function stopGenerationById(id: string) {
 }
 
 /**
- * 中断所有TH-generate的生成任务
+ * Abort all TH-generate generation tasks
  */
 export function stopAllGeneration() {
   try {
     for (const [id, controller] of generationControllers.entries()) {
-      controller.abort(`生成 ID '${id}' 已停止`);
+      controller.abort(`Generation ID '${id}' has been stopped`);
       eventSource.emit(event_types.GENERATION_STOPPED, id);
     }
     generationControllers.clear();
     return true;
   } catch (error) {
-    console.error(`[TavernHelper][Generate:停止] 中断所有生成任务时出错: ${error}`);
+    console.error(`[TavernHelper][Generate:Stop] Error aborting all generation tasks: ${error}`);
     return false;
   }
 }
 
 /**
- * 清理图片处理相关的监听器和Promise
+ * Clean up image processing related listeners and Promises
  */
 function cleanupImageProcessing(imageProcessingSetup?: ReturnType<typeof setupImageArrayProcessing>): void {
   if (imageProcessingSetup) {
@@ -53,14 +53,14 @@ function cleanupImageProcessing(imageProcessingSetup?: ReturnType<typeof setupIm
       imageProcessingSetup.cleanup();
       imageProcessingSetup.rejectImageProcessing(new Error('Generation stopped'));
     } catch (error) {
-      console.warn(`[TavernHelper][Generate:停止] 清理图片处理时出错: ${error}`);
+      console.warn(`[TavernHelper][Generate:Stop] Error cleaning up image processing: ${error}`);
     }
   }
 }
 
 /**
- * 从Overrides转换为detail.OverrideConfig
- * @param overrides 覆盖配置
+ * Convert from Overrides to detail.OverrideConfig
+ * @param overrides Override configuration
  * @returns detail.OverrideConfig
  */
 export function fromOverrides(overrides: Overrides): detail.OverrideConfig {
@@ -80,8 +80,8 @@ export function fromOverrides(overrides: Overrides): detail.OverrideConfig {
 }
 
 /**
- * 从GenerateConfig转换为detail.GenerateParams
- * @param config 生成配置
+ * Convert from GenerateConfig to detail.GenerateParams
+ * @param config Generation configuration
  * @returns detail.GenerateParams
  */
 export function fromGenerateConfig(config: GenerateConfig): detail.GenerateParams {
@@ -99,8 +99,8 @@ export function fromGenerateConfig(config: GenerateConfig): detail.GenerateParam
 }
 
 /**
- * 从GenerateRawConfig转换为detail.GenerateParams
- * @param config 原始生成配置
+ * Convert from GenerateRawConfig to detail.GenerateParams
+ * @param config Raw generation configuration
  * @returns detail.GenerateParams
  */
 export function fromGenerateRawConfig(config: GenerateRawConfig): detail.GenerateParams {
@@ -119,17 +119,17 @@ export function fromGenerateRawConfig(config: GenerateRawConfig): detail.Generat
 }
 
 /**
- * 生成AI响应的核心函数
- * @param config 生成配置参数
- * @param config.user_input 用户输入文本
- * @param config.use_preset 是否使用预设
- * @param config.image 图片参数，可以是单个图片(File|string)或图片数组(File|string)[]
- * @param config.overrides 覆盖配置
- * @param config.max_chat_history 最大聊天历史数量
- * @param config.inject 注入的提示词
- * @param config.order 提示词顺序
- * @param config.stream 是否启用流式传输
- * @returns Promise<string> 生成的响应文本
+ * Core function for generating AI responses
+ * @param config Generation configuration parameters
+ * @param config.user_input User input text
+ * @param config.use_preset Whether to use preset
+ * @param config.image Image parameter, can be a single image (File|string) or image array (File|string)[]
+ * @param config.overrides Override configuration
+ * @param config.max_chat_history Maximum chat history count
+ * @param config.inject Injected prompts
+ * @param config.order Prompt order
+ * @param config.stream Whether to enable streaming
+ * @returns Promise<string> Generated response text
  */
 async function iframeGenerate({
   generation_id,
@@ -149,14 +149,14 @@ async function iframeGenerate({
   let imageProcessingSetup: ReturnType<typeof setupImageArrayProcessing> | undefined = undefined;
 
   try {
-    // 1. 处理用户输入和图片（正则，宏，图片数组）
+    // 1. Process user input and images (regex, macros, image array)
     const inputResult = await processUserInputWithImages(user_input, use_preset, image);
     const { processedUserInput, processedImageArray } = inputResult;
     imageProcessingSetup = inputResult.imageProcessingSetup;
 
     await eventSource.emit(event_types.GENERATION_AFTER_COMMANDS, 'normal', {}, false);
 
-    // 2. 准备过滤后的基础数据
+    // 2. Prepare filtered base data
     const baseData = await prepareAndOverrideData(
       {
         overrides,
@@ -167,7 +167,7 @@ async function iframeGenerate({
       processedUserInput,
     );
 
-    // 3. 根据 use_preset 分流处理
+    // 3. Branch processing based on use_preset
     const generate_data = use_preset
       ? await handlePresetPath(baseData, processedUserInput, {
           image,
@@ -190,7 +190,7 @@ async function iframeGenerate({
         );
 
     await eventSource.emit(event_types.GENERATE_AFTER_DATA, generate_data);
-    // 4. 根据 stream 参数决定生成方式
+    // 4. Decide generation method based on stream parameter
     const result = await generateResponse(
       generate_data,
       stream,
@@ -207,10 +207,10 @@ async function iframeGenerate({
     }
     throw error;
   } finally {
-    // 清理
+    // Cleanup
     cleanupImageProcessing(imageProcessingSetup);
     generationControllers.delete(generationId);
-    // 如果所有生成都已结束，则解锁UI
+    // If all generations have ended, unlock UI
     if (generationControllers.size === 0) {
       unblockGeneration();
     }
@@ -228,7 +228,7 @@ export async function generateRaw(config: GenerateRawConfig) {
 }
 
 /**
- * 点击停止按钮时的逻辑
+ * Logic when stop button is clicked
  */
 $(document).on('click', '#mes_stop', function () {
   const wasStopped = stopGeneration();
