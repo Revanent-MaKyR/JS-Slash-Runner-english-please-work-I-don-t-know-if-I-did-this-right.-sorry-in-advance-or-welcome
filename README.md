@@ -1,69 +1,77 @@
 # Tavern-Helper
 
 > [!Warning]
-> 执行自定义 JavaScript 代码, 可能会带来安全风险:
+
+> Executing custom JavaScript code may pose security risks:
+
 >
-> - 恶意脚本可能会窃取你的 API 密钥、聊天记录等敏感信息; 修改或破坏你的 SillyTavern 设置
-> - 某些脚本可能会执行危险操作, 如发送未经授权的请求
+> - Malicious scripts may steal your API keys, chat logs, and other sensitive information; modify or corrupt your SillyTavern settings.
+
+> - Some scripts may perform dangerous operations, such as sending unauthorized requests.
+
 >
-> 请在执行任何脚本前:
+> Before executing any script:
+
 >
-> 1. 仔细检查脚本内容, 确保其来源可信
-> 2. 理解脚本的功能和可能的影响
-> 3. 如有疑问, 请勿执行来源不明的脚本
+> 1. Carefully examine the script content to ensure its source is trustworthy.
+
+> 2. Understand the script's function and potential impact.
+
+> 3. If in doubt, do not execute scripts from unknown sources.
+
 >
-> 我们不为第三方脚本造成的任何损失负责.
+> We are not responsible for any losses caused by third-party scripts.
 
-此扩展允许你在 SillyTavern 中运行外部 JavaScript 代码
 
-由于 SillyTavern 默认不支持直接执行 JavaScript 代码, 这个扩展通过使用 iframe 来隔离和执行脚本, 从而让你在某些受限的上下文中运行外部脚本.
+This extension allows you to run external JavaScript code within SillyTavern.
 
-## 文档
+Since SillyTavern does not support direct JavaScript execution by default, this extension uses iframes to isolate and execute scripts, allowing you to run external scripts in certain restricted contexts.
 
-- [文档](https://n0vi028.github.io/JS-Slash-Runner-Doc/)
+## Documentation
 
-## 参与贡献提示
+- [Documentation](https://n0vi028.github.io/JS-Slash-Runner-Doc/)
 
-### 项目结构
+## Contribution Tips
 
-基于酒馆 UI 插件的项目结构要求, 本项目直接打包源代码在 `dist/` 文件夹中并随仓库上传, 而这会让开发时经常出现分支冲突.
+### Project Structure
 
-为了解决这一点, 仓库在 `.gitattribute` 中设置了对于 `dist/` 文件夹中的冲突总是使用当前版本. 这不会有什么问题: 在上传后, ci 会将 `dist/` 文件夹重新打包成最新版本, 因而你上传的 `dist/` 文件夹内容如何无关紧要.
+Due to the project structure requirements of the Tavern UI plugin, this project directly packages the source code into the `dist/` folder and uploads it with the repository. This often leads to branch conflicts during development.
 
-为了启用这个功能, 请执行一次以下命令:
+To solve this, the repository is configured in `.gitattribute` to always use the current version for conflicts in the `dist/` folder. This won't cause any problems: after uploading, CI will repackage the `dist/` folder with the latest version, so the contents of your uploaded `dist/` folder are irrelevant.
+
+To enable this feature, execute the following command once:
 
 ```bash
 git config --global merge.ours.driver true
+
 ```
 
-### 手动编译
+### Manual Compilation
 
-你可以参考 [参与前端插件开发的 VSCode 环境配置](https://sillytavern-stage-girls-dog.readthedocs.io/tool_and_experience/js_slash_runner/index.html) 来得到 VSCode 上更详细的配置和使用教程.
+You can refer to [VSCode for participating in front-end plugin development] See [Environment Setup](https://sillytavern-stage-girls-dog.readthedocs.io/tool_and_experience/js_slash_runner/index.html) for more detailed configuration and usage tutorials on VSCode.
 
-你需要先安装有 node 22+ 和 pnpm. 如果已经安装有 node 22+, 则 pnpm 可以按以下步骤安装:
+You need to have Node.js 22+ and pnpm installed. If you already have Node.js 22+ installed, you can install pnpm as follows:
 
-```bash
+``bash
 npm install -g pnpm
+
 ```
+Then, install all dependencies for this project using pnpm:
 
-然后, 用 pnpm 安装本项目的所有依赖:
-
-```bash
+``bash
 pnpm install
 ```
+After that, you can compile this project:
 
-之后你就可以对本项目进行编译:
-
-```bash
+``bash
 pnpm build
 ```
+Alternatively, you can use `pnpm watch` to continuously monitor code changes. This way, simply refreshing the Tavern website will update the Tavern with the latest plugin code.
 
-或者, 你可以用 `pnpm watch` 来持续监听代码变动. 这样只需刷新酒馆网页, 酒馆就会使用最新的插件代码.
-
-## 许可证
+## License
 
 - [Aladdin](LICENSE)
 
-## 参考
+## References
 
-见于[文档](https://n0vi028.github.io/JS-Slash-Runner-Doc/)对应部分
+See the corresponding section in the [Documentation](https://n0vi028.github.io/JS-Slash-Runner-Doc/).
